@@ -1,0 +1,154 @@
+---
+title: "HW 2 Solutions"
+author: "Beth Babcock"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+Answer the following questions from the textbook, chapter 2, along with some additional problems. When the problem asks for a graph, use ggplot to make the graph, and paste your graph into your document. Use professional-looking axis labels with units.  Include your R code as an appendix (either at the end of the word document, or as a .r script). Choice of theme, colors, etc. is up to you. 
+
+The data from the textbook are available in either the abd library or on the book’s website
+https://whitlockschluter3e.zoology.ubc.ca/
+
+Each subsection is worth 10 points if there is a ggplot, 5 points otherwise. 
+
+Grading note: There are many ways to make each figure. It's okay if they have different colors, shading, labels, etc. then the solutions as long the figure answers the question. Also, the R code can be in an appendix or separate file, it doesn't have to be interspersed with the output like the solution is.
+
+```{r,message=FALSE}
+library(ggplot2)
+theme_set(theme_bw())
+```
+
+#### 2:24 Endangered species
+
+Answer parts a-c in the book. 
+
+**a** Line graph
+
+**b** The steepness indicates the change in number of species listed in each year. 
+
+**c** Number of species listed increased steadily in the late 1980s and early 1990s and then decreased in the late 1990s. We can't tell from the graph if fewer species are being listed or if species are being taken off the endangered list (accept any reasonable answer). 
+
+#### 2:26. Tropical trees
+
+Answer a-c in the book. 
+
+**a**
+
+```{r}
+tree<-read.csv(url("https://whitlockschluter3e.zoology.ubc.ca/Data/chapter02/chap02q26NeotropicalTreePhotosynthesis.csv"))
+ggplot(tree,aes(x=previousFruits,y=photosyntheticCapacity))+
+  geom_point()+
+#  labs(x="Previous Fruits",y="Photosynthetic Capacity") # or
+  xlab("Previous Fruits")+ylab("Photosynthetic Capacity")
+```
+
+This is a scatterplot. 
+
+**b**
+
+The explanatory variable is previous fruits, and the response variable is photosynthetic capacity. This is clear because the purpose of the experiment is to see if previous fruiting influences photosynthetic capacity. 
+
+**c**
+
+There appears to be a negative relationship between previous fruiting and photosynthetic capacity, consistent with the researchers' hypothesis.
+
+#### 2:32. Toxoplasma and accidents
+
+Answer a-c in the book, using ggplot for the graph. Make a side by side barplot, change the fill colors, and use professional looking axis labels. 
+Also, **d**, Make a stacked bar plot.  
+
+**a** It is a contingency table
+
+**b** The variables are (1) whether the driver has had an accident (yes:accident or no:control), and (2) whether they are infected with toxoplasma or not. The idea seems to be that toxoplasma might influence accident risk, so I would say that the explanatory variable is toxoplasma and the response is accidents.
+
+**c**
+
+You need a long format dataframe for ggplot. You could make this from the data in the book,
+
+```{r}
+toxoplasma<-data.frame(Infected=c("Infected","Infected","Uninfected","Uninfected"),
+                       Accident=c("Accident","Control","Accident","Control"),
+                       Count=c(21,38,38,211))
+ggplot(toxoplasma,aes(x=Infected,y=Count,fill=Accident))+
+  geom_col(position=position_dodge())+
+  scale_fill_manual(values=c("darkblue","lightblue"))+
+  labs(x="Infection status",y="Number of people")
+
+```
+
+Or alternatively, use the data from the website and geom_bar
+
+```{r}
+toxoLong<-read.csv(url("https://whitlockschluter3e.zoology.ubc.ca/Data/chapter02/chap02q32ToxoplasmaAccidents.csv"))
+names(toxoLong)
+ggplot(toxoLong,aes(x=infectionStatus,fill=driverType))+
+  geom_bar(position=position_dodge())+
+  scale_fill_manual(values=c("darkblue","lightblue"))+
+  labs(x="Infection status",y="Number of people")
+```
+
+
+There seem to be a higher fraction of accidents in people with the infection.
+
+Grading note. Okay to have the axes the other way around. Accept either way of entering the data
+
+A mosaic plot would also show this well, but we haven't gotten to this yet.
+
+**d** Stacked barplot
+
+```{r}
+ggplot(toxoLong,aes(x=infectionStatus,fill=driverType))+
+  geom_bar()+
+  scale_fill_manual(values=c("darkblue","lightblue"))+
+  labs(x="Infection status",y="Number of people")
+
+```
+
+
+### Additional questions
+
+R1. This question uses the data from Figure 2.3-5 in the book, which we looked at for the in class activity on 8/26. The following code will get you the data from the book resources website.  
+
+```{r}
+hemoglobin<-read.csv(url("https://whitlockschluter3e.zoology.ubc.ca/Data/chapter02/chap02e3bHumanHemoglobinElevation.csv"))
+summary(hemoglobin)
+```
+**R1a.** Make a violin plot, with the regions on the x axis and hemoglobin on the y axis, similar to figure 2.4b. Use the correct axis labels, including units. 
+
+```{r}
+ggplot(hemoglobin,aes(x=population,y=hemoglobin))+
+  geom_violin(fill="lightblue")+
+  labs(x="Population",y="Hemoglobin concentration(g/dL)")
+   
+
+```
+
+**R1b**
+
+Make a stripchart, jittering the points so you can see them all, and using alpha=0.5
+
+```{r}
+ggplot(hemoglobin,aes(x=population,y=hemoglobin))+
+  geom_point(alpha=0.5,position = position_jitter(width=0.2))+ # or
+#  geom_jitter(alpha=0.5,width=0.2,height=0)+
+  labs(x="Population",y="Hemoglobin concentration(g/dL)")
+   
+
+```
+
+**R1c** Make a multi-panel histogram, with panels for each region, and hemoglobin on the x axis, similar to Figure 2.3-5. Make the bars darkred and use the same axis labels as the Figure. Use scales=free. 
+
+```{r}
+ggplot(hemoglobin,aes(x=hemoglobin))+
+  geom_histogram(fill="darkred")+
+  facet_wrap(~population,ncol=1,scale="free")
+```
+
+**R1d** What pattern do you see in the data, and which plot makes the pattern easier to see?  Which plot would you prefer if you were presenting these data in a paper?
+
+The patterns in the data is that the mean in the Andes is higher than in the other regions. The pattern is a little hard to see because the sample sizes are so different between regions, which a much larger sample in USA. I think the violin plot shows the differences best. 
+
+Grading note: All have their advantages, accept any thoughtful answer. Also, which looks better may depend on how the ggplot was set up (e.g. width of the jitter)
+

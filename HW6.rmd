@@ -1,0 +1,361 @@
+---
+title: "Homework 6"
+author: "Beth Babcock"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup,message=FALSE}
+library(tidyverse)
+library(epitools)
+theme_set(theme_bw())
+```
+
+**Homework 6                                   Due October 2**
+
+
+The questions in this problem set are all from the book, chapter 8 and 9. 
+ You may download the (long format, not aggregated) data from https://whitlockschluter3e.zoology.ubc.ca/ or just type in the numbers since the dataframes are small.
+
+
+# Chapter 8
+
+
+# 8:11.a Spirit bear 
+
+The white “Spirit” black bear (or Kermode), Ursus americanus kermodei, differs from the ordinary black bear by a single amino acid change in the melanocortin 1 receptor gene11 (MC1R). In this population, the gene has two forms (or alleles): the “white” allele  and the “black” allele  The trait is recessive: white bears have two copies of the white allele of this gene (bb), whereas a bear is black if it has one or two copies of the black allele (Bb or BB). Both color morphs and all three genotypes are found together in the bear population of the northwest coast of British Columbia. If possessing the white allele has no effect on growth, survival, reproductive success, or mating patterns of individual bears, then the frequency of individuals with 0, 1, or 2 copies of the white allele  in the population will follow a binomial distribution. To investigate, Hedrick and Ritland (2012) sampled and genotyped 87 bears from the northwest coast: 42 were BB, 24 were Bb, and 21 were bb. Assume that this is a random sample of bears.  
+
+Calculate the fraction of b alleles in the population (remember, each bear has two copies of the gene).
+
+
+
+```{r}
+bear<-data.frame(b.alleles=0:2,Observed=c(42,24,21))
+proportion.b<-sum(bear$b.alleles*bear$Observed)/sum(2*bear$Observed)
+```
+
+
+Proportion b is `r round(proportion.b,2) `
+
+# 8.11.b. Spirit Bear. 
+With your estimate of the fraction of b alleles, and assuming a binomial distribution, calculate the expected frequency of bears with 0, 1, and 2 copies.
+
+
+```{r}
+bear$Prob<-dbinom(bear$b.alleles,size=2,prob=proportion.b)
+bear$Expected<-bear$Prob*sum(bear$Observed)
+bear %>%   mutate(across(where(is.numeric), ~ round(.x, 2)))
+```
+
+# 8.11.c. Spirit Bear.
+Compare the observed and expected frequencies in a graph. Describe how they differ. Please answer the question and include your R code and the figure in a file and upload it here. 
+
+
+```{r}
+bear %>% pivot_longer(c("Observed","Expected"),names_to="Type",values_to="Frequency") %>%
+  ggplot(aes(x=b.alleles,fill=Type,y=Frequency))+
+  geom_col(position=position_dodge())+
+  scale_fill_manual(values=c("darkred","goldenrod"))+
+  xlab("Number of b alleles")
+
+#or 
+  ggplot(bear,aes(x=b.alleles,y=Observed))+
+  geom_col(fill="goldenrod")+
+  geom_line(aes(y=Expected),linewidth=2,color="darkred")+  
+  xlab("Number of b alleles")
+
+
+```
+
+There are many more BB and bb bears than expected, and fewer heterozygotes (Bb).
+
+# 8.11.extra. Spirit Bear
+Test the null hypothesis that the observed frequencies are consistent with the null hypothesis. Give (1) the Null and alternate hypothesis, (2) the test statistic, (3) the degrees of freedom, (4) the P value, (5) your conclusion in words, and (6) your R code. 
+
+
+```{r}
+test.stat<-sum((bear$Observed-bear$Expected)^2/bear$Expected)
+df<-3-1-1
+P.value<-1-pchisq(test.stat,df)
+# or
+bearChi<-chisq.test(bear$Observed,p=bear$Prob)
+P.value<-1-pchisq(bearChi$statistic,df)
+```
+
+i. Ho: The data are binomial Ha: The data are not binomial
+
+ii. Test statistic is 14.92.
+
+iii. There is 1 degree of freedom = 3 groups-1 parameter-1=1
+
+iv. P value 0.00011.
+
+v. The P value is very small. So, we can reject the null hypothesis. The data are not binomial. The bears are more likely to have a BB or bb genotype than would be expected randomly.
+
+Note, you could do all the bear calculations by hand, like this, and get the same answer.
+```{r}
+number.b<-0*42+1*24+2*21
+number.bears<-42+24+21
+observed<-c(42,24,21)
+proportion.b<-number.b/(2*number.bears)
+proportion.b
+expected.prob<-c((1-proportion.b)^2,2*proportion.b*(1-proportion.b),(proportion.b)^2)
+expected.prob
+expected.freq<-expected.prob*number.bears
+expected.freq
+
+chisq.stat<-sum((observed-expected.freq)^2/expected.freq)
+Pvalue<-1-pchisq(chisq.stat,1)
+```
+
+
+# 8.13.a  Birds hitting windows.  
+
+In North America, between 100 million and 1 billion birds die each year by crashing into windows on buildings, more than any other human-related cause. This figure represents up to 5% of all birds in the area. One possible solution is to construct windows angled downward slightly, so that they reflect the ground rather than an image of the sky to a flying bird. An experiment by Klem et al. (2004) compared the number of birds that died as a result of vertical windows, windows angled 20 degrees off vertical, and windows angled 40 degrees off vertical. The angles were randomly assigned with equal probability to six windows and changed daily; assume for this exercise that windows and window locations were identical in every respect except angle. Over the course of the experiment, 30 birds were killed by windows in the vertical orientation, 15 were killed by windows set at 20 degrees off vertical, and 8 were killed by windows set at 40 degrees off vertical.  
+
+Clearly state an appropriate null hypothesis and an alternative hypothesis. 
+
+```{r}
+windows<-data.frame(Angle=c(0,20,40),Deaths=c(30,15,8))
+windows
+#or
+windowLong<-read_csv(url("https://whitlockschluter3e.zoology.ubc.ca/Data/chapter08/chap08q13BirdWindowCrash.csv"))
+windows<-table(windowLong)
+windows
+```
+
+
+Ho: The probability of birds hitting the window is the same for all three angles. 
+or
+
+P(vertical)=P(20 degrees)=P(40 degrees) = 1/3
+
+Either is correct.
+
+Ha: The probabilities in the three categories are not equal. 
+
+
+# 8.13.b  Birds hitting windows.  
+
+What proportion of deaths occurred while the windows were set at a vertical orientation? 
+
+The proportion of deaths at vertical was `r round(30/(30+15+8),2) `.
+
+# 8.13.c  Birds hitting windows.  
+
+What statistical test would you use to test the null hypothesis? 
+
+This is a chi-squared goodness of fit test. 
+
+# 8.13.d  Birds hitting windows.  
+
+Carry out the statistical test from part (c). Is there evidence that window angle affects the mortality rates of birds? Give (1) the test statistic, (2) the degrees of freedom, (3) the P value, (4) your conclusion in words, and (5) your R code. 
+
+
+```{r}
+chisq.test(windows,p=rep(1/3,3))
+```
+
+Test statistic is chi-squared=14.3
+
+df=2
+
+P value is 0.00078, which is less than 0.05. 
+
+So, reject the null hypothesis. 
+There is a difference in probability of hitting the window with angle. 
+
+
+
+# 8.17. Hurricanes
+
+All worth 5 points except the hypothesis test (worth 8 points). You will need to combine some rows.
+
+# a. 
+
+```{r}
+Hurricanes<-read.csv(url("https://whitlockschluter3e.zoology.ubc.ca/Data/chapter08/chap08q17Hurricanes.csv"))
+table(Hurricanes)
+dim(Hurricanes)
+meanval<-mean(Hurricanes$numberOfHurricanes)
+meanval
+```
+
+The mean number of hurricanes is `r meanval`
+
+# b.
+
+If the hurricanes are equally likely to hit each year, and independent, then we expect the counts of hurricanes per year to be Poisson. 
+
+# extra. 
+
+To carry out the hypothesis test, we should group the data as shown in this R code. Why is this necessary?
+
+```{r}
+hurricaneTable<-data.frame(hurricanes=c("0","1",">=2"),
+                        Observed=c(50,39,11))
+```
+
+
+# c.
+
+```{r}
+hurricaneTable<-hurricaneTable%>%
+  mutate(p=c(dpois(0:1,meanval),1-ppois(1,meanval)),
+         Expected=p*sum(Observed))
+
+test.stat<- with(hurricaneTable,sum((Observed-Expected)^2/Expected))
+test.stat
+#Note you could also get the test statistic from:
+chisq.test(hurricaneTable$Observed,p=hurricaneTable$p)$statistic
+#But the chi-squared test will not have the correct degrees of freedom. We need to 
+#subtract one parameter because we estimated a parameter (the mean).
+df<-3-1-1
+Pvalue<-1-pchisq(test.stat,df)
+Pvalue
+```
+
+i. Ho: The Hurricanes are random/Poisson
+
+  Ha: The Hurricanes are not Poisson, they are clumped or overdispersed
+ 
+ii. Test statistic is chi-squared = `r round(test.stat,2)`.
+
+iii. df=1
+ 
+iv. P value =`r round(Pvalue,2)`
+
+v. The P value is greater than 0.05, so fail to reject the null. The data are consistent with Poisson, meaning hurricanes do strike randomly.
+
+# 9.28. Vampire bats  
+Vampire bats, as their name implies, feed almost exclusively on blood. A bat must feed every day or it will starve to death, but bats are not always successful at finding a blood meal. Perhaps for this reason, they roost during the day in communal groups and sometimes share blood by regurgitative feeding.12 Researchers measured whether hungry bats were more likely to receive regurgitated blood than were partially fed bats (Wilkinson 1984). Eight bats were captured in the evening before they had fed and were held without feeding until the next morning. As a control, six bats were captured after naturally feeding at night, and they were also held until the following morning. At that time, the bats were returned to their groups. Five of the eight hungry bats were given regurgitated blood meals by group-mates, but none of the six well-fed bats were given a blood meal by other bats. What statistical test would you use to address the question “Does the probability of being fed by roost-mates vary according to hunger status?” Carry out the test, and show (1) the name of the test (2) the null and alternative hypothesis, (3) the P value, (4) your conclusion in words, and (5) your R code. 
+
+Hint: Only one test is valid here. 
+
+```{r}
+bats<-matrix(c(5,3,0,6),2,2,dimnames=list(c("fed","not fed"),c("hungry","not hungry")))
+bats
+#or
+bats<-data.frame(hungry=c(5,3),
+                 not.hungry=c(0,6))
+bats
+fisher.test(bats)
+```
+
+If we tried to do the chi-squared test, we would see that the expected frequencies are too small, with 3 out of 4 less than 5. 
+
+```{r}
+chisq.test(bats)$expected
+```
+
+So, the only valid test is Fisher. 
+
+```{r}
+fisher.test(bats)
+```
+
+ i. Method and distribution used to calculate the P value: Fisher exact test
+
+ ii.  Ho: Bats being hungry and getting fed by other bats are independent
+ Ha: Hunger and being fed are not independent. 
+
+ iii. P value is 0.03
+
+ iv. Conclusion of the test. Reject the null. Hunger and being fed are not independent. It looks like hungry bats are more likely to be fed. 
+
+# 9.34.a Orchids
+Darwin suggested that plants pollinated by long-tongued insects would benefit by having long flowers, because greater length would cause the insects to press themselves farther into the flower to reach the nectar, increasing deposition and removal of pollen. Several populations of the South African orchid, Disa draconis, evolved longer flowers after switching pollinators to long-tongued tanglewing flies. To measure the advantage of the long flowers, Johnson and Steiner (1997) experimentally shortened 59 of 118 flowers. The remaining 59 flowers werecontrols. One week later, 10 of the 59 shortened flowers had received pollen, whereas 27 of the 59 control flowers had received pollen.  Illustrate these results in a graph. Put your graph and R code in a file and upload. 
+
+
+```{r}
+orchid<-read_csv(url("https://whitlockschluter3e.zoology.ubc.ca/Data/chapter09/chap09q34NectarSpurs.csv")) %>%
+  rename(Treatment=spurTreatment,Pollination=polliation)
+ggplot(orchid,aes(x=Treatment,fill=Pollination))+
+  geom_bar(position=position_dodge())+
+  scale_fill_manual(values=c("darkred","goldenrod"))
+```
+
+
+# 9.24.b Orchids
+What is the estimated odds ratio of not receiving pollen after experimental shortening, as compared to control flowers? Provide a confidence interval of the population odds ratio. Show your code. 
+
+You can either calculate this "by hand" or use the oddsratio function in epitools.
+
+By hand: 
+
+```{r}
+orchidTable<-table(orchid)
+odds.shortened<-49/10
+odds.control<-32/27
+odds.ratio<-odds.shortened/odds.control
+SE.log.OR<-sqrt(1/32+1/27+1/49+1/10)
+SE.log.OR
+CI.log.OR<-c(log(odds.ratio)-1.96*SE.log.OR,log(odds.ratio)+1.96*SE.log.OR)
+CI.OR<-exp(CI.log.OR)
+
+#or using epitoools::oddsratio
+orchidTable<-orchidTable[,c(2,1)]
+oddsratio(orchidTable,method="wald")
+```
+
+Odds ratio is `r round(odds.ratio,2)`, with a CI of `r round(CI.OR,2)[1]` to `r round(CI.OR,2)[2]`
+
+
+# 9.24.extra Orchids
+Calculate the relative risk of not getting pollinated in treatment vs. control, and its confidence interval.
+
+
+```{r}
+#By hand
+prob.shortened<-49/(10+49)
+prob.control<-32/(27+32)
+RR<-prob.shortened/prob.control
+SE.log.RR<-sqrt(1/49+1/32-1/(27+32)-1/(10+49))
+CI.log.RR<-c(log(RR)-1.96*SE.log.RR,log(RR)+1.96*SE.log.RR)
+CI.RR<-exp(CI.log.RR)
+
+#Using epitools
+riskratio(orchidTable)
+```
+
+risk ratio is `r round(RR,2)`, with a 95% confidence interval of `r round(CI.RR,2)[1]` to `r round(CI.RR,2)[2]`.
+
+# 9.35.a Kuru
+
+Kuru is a prion disease of the Fore people of highland New Guinea. It was once transmitted by the consumption of deceased relatives at mortuary feasts, a ritual that was ended by about 1960. Using archived tissue samples, Mead et al. (2009) investigated genetic variants that might confer resistance to kuru. The data in the accompanying table are genotypes at codon 129 of the prion protein gene of young and elderly individuals all having the disease. Since the elderly individuals have survived long exposure to kuru, unusually common genotypes in this group might indicate resistant genotypes. 
+Illustrate these data with a grouped bar graph. Which genotype(s) are especially prevalent in the elderly compared with young individuals? Put your figure and R code in a file and upload. 
+
+
+```{r}
+kuru<-read_csv(url("https://whitlockschluter3e.zoology.ubc.ca/Data/chapter09/chap09q35Kuru.csv"))
+table(kuru)
+ggplot(kuru, aes(fill=age,x=codon129))+geom_bar(position=position_dodge())+
+  xlab("Genotype at codon 129")+
+  scale_fill_manual(values=c("darkred","goldenrod"))
+
+#or
+ggplot(kuru, aes(x=age,fill=codon129))+geom_bar(position=position_dodge())+
+  xlab("Genotype at codon 129")+
+  scale_fill_manual(values=c("darkred","goldenrod","darkgreen"))
+```
+
+The elderly appear to be more likely to have the MV genotype. 
+
+# b
+Test whether genotype frequencies differ between the two age groups. Use the chi-squared test, and show (1) Null and alternative hypothesis, (2) test statistic, (3) degrees of freedom, (4) P value, (5) conclusion in words, and (6) your code. 
+
+
+```{r}
+chisq.test(kuru$age,kuru$codon129)
+```
+
+ i.   Ho. The two variables are independent. Ha. They are not independent.
+
+ ii.  Test statistic chi-squared= 33.7 (with correction), df=2.
+
+ iii. df = 2
+ 
+ iv. P value= 4.73e-08
+
+ v.  Reject Ho. There is a strong relationship between age group and genotype. 
+

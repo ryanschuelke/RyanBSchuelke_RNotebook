@@ -1,0 +1,249 @@
+---
+title: "Homework 3 solutions"
+author: "Beth Babcock"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+**Problem set 3. 				              				Due September 11, 2025**
+
+Answer the following questions from the textbook, chapter 3, and standalone R questions. Please make all graphs and data summaries in R with ggplot2 and tidyverse. Datasets are available at the course website https://whitlockschluter3e.zoology.ubc.ca/chapter03.html. Hint: you will need group_by() %>% summarize() several times. 
+
+Each subsection is worth 6 points. 
+
+Grading note: There is more than one way to set up the R code in these problems. Accept any reasonable solution. Also, the R code can be attached as a separate file, pasted in at the end, or interspersed with the answers.
+
+```{r,message=FALSE,error=FALSE}
+library(ggplot2)
+theme_set(theme_bw()) #optional
+library(tidyverse)
+library(ISwR)
+library(abd)
+```
+
+
+### 3.16 Rainforest communities
+
+Answer questions a-c in the book. Hint: For question c, they are asking if you can calculate the mean from the table shown in the book, not from the complete dataset available online. 
+
+```{r,message=FALSE}
+rainforest<-read_csv(url("https://whitlockschluter3e.zoology.ubc.ca/Data/chapter03/chap03q16DietBreadthElVerde.csv"))
+head(rainforest)
+```
+
+##### a
+
+The median is
+```{r}
+median(rainforest$breadth)
+```
+
+##### b
+
+The intequartile range is the difference between the 0.75 and 0.25 quantile. In this case, all the methods I tried gave the same result. 
+
+```{r}
+quantile(rainforest$breadth,c(0.25,0.75),type=7)
+quantile(rainforest$breadth,c(0.25,0.75),type=2)
+quantile(rainforest$breadth,c(0.25,0.75),type=1)
+iqr<-quantile(rainforest$breadth,0.75)-quantile(rainforest$breadth,0.25)
+#or
+iqr<-IQR(rainforest$breadth)
+iqr
+```
+The IQR is `r iqr`
+
+##### c
+
+We could not calculate the mean from just the numbers in the table because we don't have the actual numbers in the >20 category. We could have calculated IQR and median, because they don't need the actual numbers, just how many points are larger than 20.  (Aside, the mean is `r round(mean(rainforest$breadth),1)`)
+
+### 3.20 Sparrows
+
+Answer parts a-c.
+
+#### a
+
+```{r,message=FALSE}
+sparrow<-read_csv(url("https://whitlockschluter3e.zoology.ubc.ca/Data/chapter03/chap03q20SparrowReproductiveSuccess.csv"))
+head(sparrow)
+sparrow %>% 
+  group_by(sex) %>%
+  summarize(Mean=mean(lifetimeRS))
+```
+
+The females have a higher mean LRS
+
+#### b
+
+```{r}
+sparrow %>% 
+  group_by(sex) %>%
+  summarize(Variance=var(lifetimeRS))
+```
+
+The females also have a higher variance in LRS.
+
+#### c
+
+```{r}
+ggplot(sparrow,aes(x=sex,y=lifetimeRS))+
+  geom_boxplot(fill="lightgrey")
+sparrow %>% 
+  group_by(sex) %>%
+  summarize(Median=median(lifetimeRS))
+```
+
+The sexes have the same median, equal to 1. Grading note: No need to do the calculation, just answer from the plot. 
+
+### 3.28 Sea urchins
+
+Answer parts a-c.
+
+```{r,message=FALSE}
+urchin<-read_csv(url("https://whitlockschluter3e.zoology.ubc.ca/Data/chapter03/chap03q28SeaUrchinBindin.csv"))
+summary(urchin)
+```
+
+#### a
+
+Answers will vary as many different plots are correct. 
+
+```{r}
+ggplot(urchin,aes(x=populationOfFemale,y=percentAAfertilization,
+  fill=populationOfFemale))+
+  geom_violin()
+# or
+ggplot(urchin,aes(x=percentAAfertilization,fill=populationOfFemale))+
+  geom_histogram(bins=15)+
+  facet_wrap(~populationOfFemale)
+#or
+ggplot(urchin,aes(x=populationOfFemale,y=percentAAfertilization,
+  color=populationOfFemale))+
+  geom_point(position=position_jitter(height=0,width=0.1))
+#or
+ggplot(urchin,aes(x=populationOfFemale,y=percentAAfertilization,
+  color=populationOfFemale))+
+  stat_ecdf()
+```
+
+There is an association. The BB females seem to have smaller percent fertilization than the AA.
+
+#### b 
+
+There is a skew in both groups and one extreme outlier in the BB group, so median would be more representative of a typical animal. Grading note: Answers may vary, as long as the pick median. 
+
+```{r}
+urchin %>% group_by(populationOfFemale) %>%
+  summarize(median=median(percentAAfertilization))
+```
+AA indeed has a higher median. 
+
+#### c
+
+Interquartile range would be good for dealing with the outlier.
+
+```{r}
+urchin %>% group_by(populationOfFemale) %>%
+  summarize(IQR=IQR(percentAAfertilization))
+
+```
+
+The spread is wider for the BB group.
+
+Grading note: Quantiles and IQR may vary slightly depending on the method used to calculate them. Accept any quantile type. The method given in the textbook would give the following, which is also correct:
+
+```{r}
+urchin %>% group_by(populationOfFemale) %>%
+  summarize(IQR=IQR(percentAAfertilization,type=2))
+```
+
+### R1. Tidyverse pipes
+
+Use the cystfibr data from the ISwR library for this example. This is data on people with cystic fibrosis, where pemax is a measure of lung capacity related to the disease. See its help file for more information.
+
+#### a
+Use tidyverse code, including the pipe %>% to choose only the rows for sex 0 and age less than or equal to 12, and only the columns age, height and pemax, and make a summary of this dataframe using the summary function. 
+
+```{r}
+cystfibr %>%
+  filter(age<=12,sex==0) %>%
+  select(age,height,pemax) %>%
+  summary()  
+```
+
+#### b
+Use another pipe, starting with cysfibr, to calculate a new column called "child" which is 1 if the person's age is less than or equal to 12, and 0 otherwise, group the people by sex and whether they are children, and use summarize to make a new column including the sample size in each category. Save this output into a new object called cfCounts.
+
+```{r}
+cfCounts<-cystfibr %>% 
+  mutate(child=ifelse(age<=12,1,0)) %>%
+  group_by(sex,child) %>%
+  summarize(n=n())
+cfCounts
+```
+
+Grading note. There is more than one way to get the answer. 
+
+#### c
+Copy and paste your pipe from part b and add columns for the mean and standard deviation. Show your final table. CV also shown. 
+
+```{r}
+cfCounts<-cystfibr %>% 
+  mutate(child=ifelse(age<=12,1,0)) %>%
+  group_by(sex,child) %>%
+  summarize(n=n(),
+            mean=mean(pemax),
+            sd=sd(pemax),
+            CV=sd/mean)
+cfCounts
+```
+
+### R2. Reshaping
+
+Use the dataframe GodwitArrival from the abd library. It contains information on mail and female arrival times at a nesting area.  First, use this code to add a column with the pair number because you will need to keep track of that. 
+
+```{r}
+GodwitArrival<-GodwitArrival%>%
+  mutate(pair=row_number())
+```
+
+#### a
+
+Use pivot_longer to make a wide format version called birdLong, from the columns male and female, where the new columns are called "sex" and "arrivalTime". SHow the table
+
+#### b
+
+Use the long format data to make a side by side violin plot. 
+
+```{r}
+
+birdLong<-pivot_longer(GodwitArrival,female:male,names_to="sex",
+                        values_to="arrivalTime")
+birdLong
+ggplot(birdLong,aes(x=sex,y=arrivalTime))+
+  geom_violin(fill="grey")
+
+```
+
+#### c
+
+Using the long format table and a tidyverse pipe, calculate minimum, maximum, mean and standard deviation of arrival time by sex. Show the table.  
+
+```{r}
+birdLong %>%  group_by(sex) %>%
+  summarize(min=min(arrivalTime),
+            max=max(arrivalTime),
+            mean=mean(arrivalTime),
+            sd=sd(arrivalTime))
+```
+
+#### d
+
+Now use pivot_wider on birdLong to get it back to the original shape. Include the table in your solution. Does the result of pivot_wider look exactly the same as the original data?
+
+```{r}
+pivot_wider(birdLong,names_from=sex,values_from=arrivalTime)
+```
+
+This does look the same as the original data. The result of pivot_wider and pivot_longer are tibbles. Your original data may have been a data.frame depending on how you read it in, but it should have the same information. 
+

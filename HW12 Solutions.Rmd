@@ -1,0 +1,178 @@
+---
+title: "HW 12."
+author: "Beth Babcock"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r,message=FALSE}
+library(tidyverse)
+theme_set(theme_bw(base_size=10))
+```
+
+**17.21  Basal metabolic rate**
+
+Previous research has indicated that basal metabolic rate R of mammal species depends on body mass M in the following way: R=a*M^b, where a and b are constants. 
+
+```{r}
+bmr<-read.csv(url("https://whitlockschluter3e.zoology.ubc.ca/Data/chapter17/chap17q21PrimateMassMetabolicRate.csv"))
+summary(bmr)
+ggplot(bmr,aes(x=mass,y=bmr))+geom_point()
+```
+
+a. Use linear regression to estimate b for primates.
+
+b. Plot your line and the data in a scatter plot on the log scale. 
+
+c. How precise is the estimate of b? Provide a standard error for b and a 95% confidence interval for b.  Assume that the species data are independent.
+
+d. Now estimate both a and b with a non-linear regression, and give their values and standard errors. 
+
+
+**a**
+
+```{r}
+bmr.lm<-lm(log(bmr)~log(mass),data=bmr)
+coef(bmr.lm)
+```
+
+The parameter b is equal to the slope of the log transformed parameter, so it is `r round(coef(bmr.lm)[2],3)`.
+
+**b**
+```{r}
+ggplot(bmr,aes(x=log(mass),y=log(bmr)))+
+  geom_point()+
+  stat_smooth(method="lm")
+```
+
+**c**
+
+```{r}
+slopeval<-coef(bmr.lm)[2]
+slopeSE<-summary(bmr.lm)$coef[2,2]
+critval<-qt(0.975,nrow(bmr)-2)
+CIval<-c(slopeval-critval*slopeSE,slopeval+critval*slopeSE)
+```
+
+The standard error is `r round(slopeSE,2)`. The confidence interval is 
+`r round(CIval,2)`
+
+**d**
+
+```{r}
+bmr.nls<-nls(bmr~a*mass^b,data=bmr,start=list(a=1,b=1))
+summary(bmr.nls)$coef
+```
+
+The slope is `r round(coef(bmr.nls)[2],3)`, and its standard error is 
+`r round(summary(bmr.nls)$coef[2,2],3)`
+
+
+## Smoothing and polynomial regression (not in book)
+
+Use the following data, where the x variable is the age when adaphnia died, and y is a measure of parasite infection. 
+
+**a**  Plot the data along with a smooth. Does the relationship look linear?
+  
+```{r}
+parasite<-read.csv(url("https://whitlockschluter3e.zoology.ubc.ca/Data/chapter17/chap17q28DaphniaParasiteLongevity.csv"))
+ggplot(parasite,aes(x=longevity,y=sqrtSpores))+
+  geom_point()+
+  geom_smooth()
+```
+
+**b**  Run a gam, and use gam.check to make sure the model is adequate. Provide the gam.check table.
+
+```{r}
+library(mgcv)
+parasite.gam<-gam(sqrtSpores~s(longevity),data=parasite)
+gam.check(parasite.gam)
+```
+
+Judging from the fact that the gam.check P value is not significant, the wiggliness is sufficient. The residuals look fairly normal, and there is no obvious trend in the variances. 
+
+**c**  Is the smooth significant? What does that imply?
+
+```{r}
+summary(parasite.gam)
+
+```
+
+The P value of s(longevity) is highly significant (P<2E-16) implying that the smooth with longevity is able to predict parasite infection. 
+
+
+**Quadratic and model selection**
+
+**a**  Using the same data set, fit a model with a linear and a quadratic (squared) term.  What is the R squared and what does that imply?
+
+```{r}
+parasite.lm<-lm(sqrtSpores~longevity+I(longevity^2),data=parasite)
+summary(parasite.lm)
+```
+
+ R squared is 0.74, meaning that the longevity variable (with a squared term) explains 74% of the variance. 
+
+**b** Plot both the smooth and the quadratic regression on the sme plot. Are they similar?
+
+```{r}
+ggplot(parasite,aes(x=longevity,y=sqrtSpores))+
+  geom_point()+
+  stat_smooth(aes(fill="Smooth",color="Smooth"))+
+  stat_smooth(aes(fill="Quadratic",color="Quadratic"),method=lm,formula=y~x+I(x^2))
+
+```
+
+The smooth and the quadratic fit are similar.  
+
+**c** Use AIC to see whether the smooth or the polynomial regression is the better model 
+
+```{r}
+AIC(parasite.gam,parasite.lm)
+```
+
+AIC prefers the smooth (gam).
+
+## Model selection and multiple regression
+
+```{r}
+conch<-read.csv("conch2.csv")
+```
+
+**a**  Run a linear model to predict logWholeWeight from all the other variables. No need to include interactions or squred terms. Which variables are significant? How much variance is explained by the model?
+
+```{r}
+conch<-read.csv("conch2.csv")
+conchlw1<-lm(LogWholeWeight~ShellLipThickness+OperculumWidth+OperculumLength+Sex+Mature,
+             data=conch)
+anova(conchlw1)
+```
+
+**b** Now use the step function to find the best model using AIC. Which variables are included? How much variance is explained by the model?
+
+```{r}
+conchlw2<-step(conchlw1)
+anova(conchlw2)
+```
+
+**d** 
+
+Now do a binomial GLM to predict maturity from all the other variables. How much variance (deviance) is explained? Which variables are significant?
+
+```{r}
+glm1<-glm(Mature~ShellLipThickness+OperculumWidth+OperculumLength+Sex+LogWholeWeight,
+          data=conch)
+anova(glm1,test="Chi")
+MuMIn::r.squaredGLMM(glm1)
+```
+**e**  Use the step function to find the best model Which variables are included? How much variance is explained? How much does AIC improve between the model in part d and the model in part e.
+
+```{r}
+glm2<-step(glm1)
+anova(glm2)
+MuMIn::r.squaredGLMM(glm2)
+AIC(glm1,glm2)
+```
+Only shell lip thickness, OperculumWidth and LogWholeWeight predict maturity.
+The variance explained is still around 38%. AIC is 2 points better. 
+
+

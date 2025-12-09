@@ -1,0 +1,122 @@
+---
+title: "RSM 612.  Problem set 1"
+author: "Beth Babcock"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+Due Thursday, August 28, 2025
+Points: 5 points per subsection of each problem.
+
+Answer the following assignment problems from Whitlock and Schluter, 3rd Edition (If you have a different edition of the textbook, look at the books in the course reserves to get the right homework questions). Please see the file Guidelines for Grading and the example file called BabcockExampleProblemSet.docx for more specific instructions.  
+
+
+### Chapter 1. Problem 17. Phone survey
+
+(a) Leaving out cell phones would mean that people without land lines would not be sampled. People with and without landlines could have very different consumer preferences from people with landlines, so the survey results would be biased. Grading note: answers may vary, as long as the say something about under or over-sampling, or sampling bias, or the sample not being representative, or groups of people having different preferences. 
+
+(b) Equal chance of being sampled.
+
+(b) Accuracy
+
+
+### Problem 20. Explanatory and response variables
+
+(a) Explanatory: presence of the gene mutation. Response: survival (or immunity to warfarin)
+(b) Explanatory: naturopathy vs. psychotherapy treatment. Response: anxiety scores
+(c) Explanatory: reward sensitivity. Response: brain activity in response to images. Also okay to say that neither is explanatory since this a correlation
+(d) Explanatory: endostatin dose. Response: tumor growth
+
+### Problem 21. Experimental or Observational studies
+
+(a) Observational. (The researchers could not assign the gene mutation to random mice)
+(b) Experimental
+(c)  Observational
+(d) Experimental
+
+### R1. Make a dataframe. 
+
+(a) Use R code to make a data frame called R1data, in which a column called “logConcentration” has the values from a sequence between 1 and 6, a column called “Concentration” has values calculated as the exponent of logConcentration, and “Method”, made with the rep function, that has the values of  “A”,”B” and “C”, each repeated 3 times (i.e. the column should say A,A,B,B,C,C).  See the help file for “rep” to see how to do this. Print the data frame to your console.
+
+```{r}
+R1data<-data.frame(logConcentration=1:6,
+                   Concentration=exp(1:6),
+                   Method=rep(c("A","B","C"),each=2))
+```
+
+Grading note: There are many ways to get the same result. Accept any valid R code that gives the correct dataframe. Also, accept 1:6^2 instead of exp(1:6) because there was some confusion in office hours. 
+
+(b) Print the summary of the data frame using the summary function and dimensions with the dim function. 
+
+```{r}
+summary(R1data)
+dim(R1data)
+```
+
+
+(c) Use square brackets format to extract rows with logConcentration between 2 and 4, inclusive. Which rows are included?
+
+```{r}
+R1data[R1data$logConcentration>=2 & R1data$logConcentration<=4,]
+```
+
+3 rows
+
+Grading note. Accept tidyverse code for the filters for parts c-e. We haven't done this yet, but the code would be
+
+```{r,message=FALSE}
+library(tidyverse)
+R1data %>% filter(logConcentration>=2 & logConcentration<=4)
+```
+
+
+(d) Use square brackets format to extract rows in which Concentration is less than 4 or Concentration is greater than 25. Which rows are included?
+
+```{r}
+R1data[R1data$Concentration<4 | R1data$Concentration>25,]
+```
+
+ 
+(e) Use square brackets format to extract rows in which Concentration is less than or equal to 5 and Method is “A”. Which rows are included?
+
+```{r}
+R1data[R1data$Concentration<=4 & R1data$Method=="A",]
+```
+
+(f) Print your dataframe R1data to a file using write.csv, calling the file “R1data.csv”. Use getwd to show the working directory where you printed the file. Look to be sure the file is there. Now read in the data from that file into a new object called R1datanew using read.csv. Print the new dataframe to your console by typing its name. Is it the same as the old data frame?
+
+```{r}
+write.csv(R1data,"R1data.csv",row.names = FALSE)
+R1datanew<-read.csv("R1data.csv")
+R1datanew
+```
+The dataframe is identical. Grading note: Okay to use write_csv and read_csv in which case the new object will be a tibble. 
+
+### R2. Load a new library and use it. 
+
+(a) Install the library called nlme and open it in R. Look at the help file for the sleepstudy dataframe in this library. What information is contained in the dataframe?
+
+```{r,message=FALSE}
+library(lme4)
+?sleepstudy
+```
+
+This is data on Reaction times and Days of sleep deprivation for a number of human subjects in a study.
+
+(b) Use the summary and head functions to look at the dataframe sleepstudy.  List which variables are numeric and which are categorical. 
+
+```{r}
+summary(sleepstudy)
+head(sleepstudy)
+```
+
+Numerical:Reaction,Days
+
+Categorical: Subject
+
+(c) Use the table function to count how many measurements there are for each subject. 
+
+```{r}
+table(sleepstudy$Subject)
+```
+There are 10 observations for each subject.
