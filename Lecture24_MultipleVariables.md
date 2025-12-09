@@ -1,7 +1,7 @@
 ### Lecture 24. Linear models with multiple variables
 
-### ANNOTATION: Loads required packages for analysis and plotting
-### ANNOTATION: Includes tidyverse, gridExtra (layout), ggfortify (diagnostics), jtools (regression summaries), interactions (interaction plots)
+###   Loads required packages for analysis and plotting
+###   Includes tidyverse, gridExtra (layout), ggfortify (diagnostics), jtools (regression summaries), interactions (interaction plots)
 ```r
 library(tidyverse)
 library(gridExtra)
@@ -13,10 +13,10 @@ theme_set(theme_classic(base_size=12))
 
 ### Calcium example
 
-### ANNOTATION: Reads 'calcium.csv' file (assumes it is in working directory)
-### ANNOTATION: Summarizes the dataset
-### ANNOTATION: Creates an Interaction Plot using ggplot
-### ANNOTATION: stat_summary() plots means +/- standard errors for Calcium by Treatment, colored by Sex
+###   Reads 'calcium.csv' file (assumes it is in working directory)
+###   Summarizes the dataset
+###   Creates an Interaction Plot using ggplot
+###   stat_summary() plots means +/- standard errors for Calcium by Treatment, colored by Sex
 ```r
 calcium<-read.csv("calcium.csv")
 summary(calcium)
@@ -25,17 +25,17 @@ ggplot(calcium,aes(x=Treatment,y=Calcium,color=Sex))+
   ggtitle("Interaction plot")
 ```
 
-### ANNOTATION: Fits a Two-Way ANOVA model with Interaction
-### ANNOTATION: Calcium ~ Sex * Treatment is equivalent to Sex + Treatment + Sex:Treatment
-### ANNOTATION: Tests for main effects of Sex, Treatment, and their Interaction
+###   Fits a Two-Way ANOVA model with Interaction
+###   Calcium ~ Sex * Treatment is equivalent to Sex + Treatment + Sex:Treatment
+###   Tests for main effects of Sex, Treatment, and their Interaction
 ```r
 calcium.aov<-lm(Calcium~Sex*Treatment,data=calcium) #or
 calcium.aov<-lm(Calcium~Sex+Treatment+Sex:Treatment,data=calcium)
 anova(calcium.aov)
 ```
 
-### ANNOTATION: Fits a Reduced Model (Additive Model) WITHOUT interaction
-### ANNOTATION: Calcium ~ Sex + Treatment
+###   Fits a Reduced Model (Additive Model) WITHOUT interaction
+###   Calcium ~ Sex + Treatment
 ```r
 calcium.aov2<-lm(Calcium~Sex+Treatment,data=calcium)
 anova(calcium.aov2)
@@ -43,16 +43,16 @@ anova(calcium.aov2)
 
 ### Make plots with ggplot
 
-### ANNOTATION: Adds fitted (predicted) values from both models to the dataframe
-### ANNOTATION: fitFull = predicted values from model with interaction
-### ANNOTATION: fitReduced = predicted values from model without interaction
+###   Adds fitted (predicted) values from both models to the dataframe
+###   fitFull = predicted values from model with interaction
+###   fitReduced = predicted values from model without interaction
 ```r
 calcium$fitFull<-predict(calcium.aov)
 calcium$fitReduced<-predict(calcium.aov2)
 ```
 
-### ANNOTATION: Plots actual data vs Predicted values from the Full Model (Interaction)
-### ANNOTATION: Note that lines for Sex are NOT parallel (allowing for interaction)
+###   Plots actual data vs Predicted values from the Full Model (Interaction)
+###   Note that lines for Sex are NOT parallel (allowing for interaction)
 ```r
 #Interaction
 g1<-ggplot(calcium,aes(x=Treatment,y=fitFull,color=Sex,group=Sex))+
@@ -61,8 +61,8 @@ g1<-ggplot(calcium,aes(x=Treatment,y=fitFull,color=Sex,group=Sex))+
   ggtitle("Interaction model")
 ```
 
-### ANNOTATION: Plots actual data vs Predicted values from the Reduced Model (Additive)
-### ANNOTATION: Note that lines for Sex ARE parallel (forcing no interaction)
+###   Plots actual data vs Predicted values from the Reduced Model (Additive)
+###   Note that lines for Sex ARE parallel (forcing no interaction)
 ```r
 #Additive
 g2<-ggplot(calcium,aes(x=Treatment,y=fitReduced,color=Sex,group=Sex))+
@@ -71,52 +71,52 @@ g2<-ggplot(calcium,aes(x=Treatment,y=fitReduced,color=Sex,group=Sex))+
   ggtitle("Additive model")
 ```
 
-### ANNOTATION: Arranges both plots side-by-side for comparison
+###   Arranges both plots side-by-side for comparison
 ```r
 grid.arrange(g1,g2,ncol=2)
 ```
 
-### ANNOTATION: cat_plot (from interactions package) creates a cleaner interaction plot
+###   cat_plot (from interactions package) creates a cleaner interaction plot
 ```r
 cat_plot(calcium.aov, pred = Treatment, modx = Sex, plot.points = TRUE,
          interval = TRUE)
 ```
 
-### ANNOTATION: interaction.plot (base R function) creates a simple interaction plot
+###   interaction.plot (base R function) creates a simple interaction plot
 ```r
 interaction.plot(calcium$Treatment,calcium$Sex,calcium$Calcium)
 ```
 
 ### ANCOVA
 
-### ANNOTATION: Reads 'NeanderthalBrainSize.csv' from URL
-### ANNOTATION: Converts species to a factor
-### ANNOTATION: Summarizes the dataset
+###   Reads 'NeanderthalBrainSize.csv' from URL
+###   Converts species to a factor
+###   Summarizes the dataset
 ```r
 neander<-read.csv(url("[https://whitlockschluter3e.zoology.ubc.ca/Data/chapter18/chap18e4NeanderthalBrainSize.csv](https://whitlockschluter3e.zoology.ubc.ca/Data/chapter18/chap18e4NeanderthalBrainSize.csv)"))
 neander$species<-factor(neander$species)
 summary(neander)
 ```
 
-### ANNOTATION: Fits Full Model (Interaction Model) for ANCOVA
-### ANNOTATION: lnBrain ~ species * lnMass (tests if slopes differ between species)
+###   Fits Full Model (Interaction Model) for ANCOVA
+###   lnBrain ~ species * lnMass (tests if slopes differ between species)
 ```r
 neander.lm<-lm(lnBrain~species*lnMass,data=neander)
 anova(neander.lm)
 summary(neander.lm)
 ```
 
-### ANNOTATION: Fits Reduced Model (Additive Model) for ANCOVA
-### ANNOTATION: lnBrain ~ species + lnMass (assumes parallel slopes)
-### ANNOTATION: This tests if intercepts (brain size adjusted for mass) differ between species
+###   Fits Reduced Model (Additive Model) for ANCOVA
+###   lnBrain ~ species + lnMass (assumes parallel slopes)
+###   This tests if intercepts (brain size adjusted for mass) differ between species
 ```r
 neander.lm2<-lm(lnBrain~species+lnMass,data=neander)
 anova(neander.lm2)
 summary(neander.lm2)
 ```
 
-### ANNOTATION: Creates scatterplot with regression lines
-### ANNOTATION: geom_smooth(method="lm") fits separate lines for each species (visualizing the interaction)
+###   Creates scatterplot with regression lines
+###   geom_smooth(method="lm") fits separate lines for each species (visualizing the interaction)
 ```r
 ggplot(neander,aes(x=lnMass,y=lnBrain,color=species))+
   geom_point()+
@@ -127,24 +127,24 @@ ggplot(neander,aes(x=lnMass,y=lnBrain,color=species))+
 
 ### Null model: y ~ 1
 
-### ANNOTATION: Reads 'LionNoses.csv' from URL
-### ANNOTATION: Fits Null Model (Intercept only): ageInYears ~ 1
-### ANNOTATION: Fits Linear Regression Model: ageInYears ~ proportionBlack
+###   Reads 'LionNoses.csv' from URL
+###   Fits Null Model (Intercept only): ageInYears ~ 1
+###   Fits Linear Regression Model: ageInYears ~ proportionBlack
 ```r
 lion<-read.csv(url("[https://whitlockschluter3e.zoology.ubc.ca/Data/chapter17/chap17e1LionNoses.csv](https://whitlockschluter3e.zoology.ubc.ca/Data/chapter17/chap17e1LionNoses.csv)"))
 lionnull<-lm(ageInYears~1,data=lion)
 lionlm<-lm(ageInYears~proportionBlack,data=lion)
 ```
 
-### ANNOTATION: Compares the two models using ANOVA
-### ANNOTATION: Tests if adding 'proportionBlack' significantly improves fit over the null model
+###   Compares the two models using ANOVA
+###   Tests if adding 'proportionBlack' significantly improves fit over the null model
 ```r
 anova(lionnull,lionlm)
 ```
 
-### ANNOTATION: Plots the two models
-### ANNOTATION: lion1: Linear regression (y ~ x) - sloped line
-### ANNOTATION: lion2: Null model (y ~ 1) - flat horizontal line at the mean
+###   Plots the two models
+###   lion1: Linear regression (y ~ x) - sloped line
+###   lion2: Null model (y ~ 1) - flat horizontal line at the mean
 ```r
 lion1<-ggplot(lion,aes(x=proportionBlack,y=ageInYears))+geom_point()+
   geom_smooth(method="lm",formula=y~x)+
@@ -157,10 +157,10 @@ grid.arrange(lion2,lion1,ncol=2)
 
 ### ANOVA as lm
 
-### ANNOTATION: Reads 'KneesWhoSayNight.csv' data
-### ANNOTATION: Converts treatment to factor and orders levels
-### ANNOTATION: Fits ANOVA model (as linear model): shift ~ treatment
-### ANNOTATION: Fits Null model: shift ~ 1
+###   Reads 'KneesWhoSayNight.csv' data
+###   Converts treatment to factor and orders levels
+###   Fits ANOVA model (as linear model): shift ~ treatment
+###   Fits Null model: shift ~ 1
 ```r
 knee<-read.csv(url("[https://whitlockschluter3e.zoology.ubc.ca/Data/chapter15/chap15e1KneesWhoSayNight.csv](https://whitlockschluter3e.zoology.ubc.ca/Data/chapter15/chap15e1KneesWhoSayNight.csv)"))
 summary(knee)
@@ -169,30 +169,30 @@ kneelm<-lm(shift~treatment,data=knee)
 kneenull<-lm(shift~1,data=knee)
 ```
 
-### ANNOTATION: Calculates group means and SEs for plotting
+###   Calculates group means and SEs for plotting
 ```r
 kneeSum <- knee %>% group_by(treatment) %>%
   summarize(mean=mean(shift),
             se=sd(shift)/sqrt(n()))
 ```
 
-### ANNOTATION: Calculates overall grand mean and SE
+###   Calculates overall grand mean and SE
 ```r
 kneeAll <- knee %>%
   summarize(mean=mean(shift),
             se=sd(shift)/sqrt(n()))
 ```
 
-### ANNOTATION: Duplicates the grand mean row 3 times to match the structure for plotting
+###   Duplicates the grand mean row 3 times to match the structure for plotting
 ```r
 kneeAll<-rbind(kneeAll,kneeAll,kneeAll) %>%
   mutate(treatment=kneeSum$treatment)
 kneeAll
 ```
 
-### ANNOTATION: Plots the two models
-### ANNOTATION: knee1: ANOVA model (means vary by group)
-### ANNOTATION: knee2: Null model (grand mean for everyone)
+###   Plots the two models
+###   knee1: ANOVA model (means vary by group)
+###   knee2: Null model (grand mean for everyone)
 ```r
 knee1<-ggplot(knee,aes(x=treatment,y=shift))+
   geom_point(col="darkred",position=position_jitter(width=0.1))+
@@ -208,8 +208,8 @@ knee2<-ggplot(knee,aes(x=treatment,y=shift))+
 grid.arrange(knee2,knee1,ncol=2)
 ```
 
-### ANNOTATION: Compares the Null model vs ANOVA model
-### ANNOTATION: This is mathematically identical to the standard one-way ANOVA F-test
+###   Compares the Null model vs ANOVA model
+###   This is mathematically identical to the standard one-way ANOVA F-test
 ```r
 anova(kneenull,kneelm)
 ```
