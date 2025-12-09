@@ -1,0 +1,183 @@
+### ANNOTATION: Loads required packages for regression analysis and plotting
+### ANNOTATION: includes tidyverse (data tools), gridExtra (plot layout), ggfortify (diagnostic plots), jtools (regression summaries)
+```r
+library(tidyverse)
+library(gridExtra)
+library(ggfortify) #for autoplot
+library(jtools) # for regression plots and summaries
+theme_set(theme_bw(base_size=10))
+```
+
+### Which variables are x and y?
+
+### For the seal example.
+
+### ANNOTATION: Reads 'ShrinkingSeals.csv' from URL
+### ANNOTATION: Plots Seal Length (Y) vs Age (X) with regression line
+### ANNOTATION: Fits linear model (length ~ age) and summarizes results
+### ANNOTATION: Then plots Age (Y) vs Length (X) - reversing variables changes the regression line!
+### ANNOTATION: Fits reversed model (age ~ length) and plots diagnostics (autoplot)
+```r
+seal<-read.csv(url("[https://whitlockschluter3e.zoology.ubc.ca/Data/chapter17/chap17e8ShrinkingSeals.csv](https://whitlockschluter3e.zoology.ubc.ca/Data/chapter17/chap17e8ShrinkingSeals.csv)"))
+ggplot(seal,aes(x=ageInDays,y=length))+
+  geom_point()+
+  stat_smooth(method="lm")
+predictLength<-lm(length~ageInDays,data=seal)
+summary(predictLength)
+ggplot(seal,aes(x=length,y=ageInDays))+
+  geom_point()+
+  stat_smooth(method="lm")
+predictAge<-lm(ageInDays~length,data=seal)
+summary(predictAge)
+autoplot(predictAge)
+```
+
+### Final regression plot, with all information
+
+### ANNOTATION: Reads 'LionNoses.csv' from URL
+### ANNOTATION: Fits linear model for lion age ~ proportionBlack
+### ANNOTATION: effect_plot() (from jtools) plots the regression line with CI, data points, and equation labels
+```r
+lion<-read.csv(url("[https://whitlockschluter3e.zoology.ubc.ca/Data/chapter17/chap17e1LionNoses.csv](https://whitlockschluter3e.zoology.ubc.ca/Data/chapter17/chap17e1LionNoses.csv)"))
+lion.lm<-lm(ageInYears~proportionBlack,data=lion)
+
+effect_plot(lion.lm, pred = proportionBlack, interval = TRUE, plot.points = TRUE,
+            x.label = "Proportion black", y.label = "Age (years)", 
+            main.title = "Lion age by nose color")
+```
+
+### ANNOTATION: summary(lion.lm) prints standard R regression summary
+### ANNOTATION: summ(lion.lm) (from jtools) prints a prettier, more readable summary
+```r
+summary(lion.lm)
+summ(lion.lm)
+```
+
+### Residual plots
+
+### ANNOTATION: Reads 'BlueTitFertility.csv' from URL
+### ANNOTATION: Fits linear model (fertility ~ manipulation)
+### ANNOTATION: autoplot() creates 4 standard diagnostic plots for residuals
+```r
+bluetit<-read.csv(url("[https://whitlockschluter3e.zoology.ubc.ca/Data/chapter17/chap17e3BlueTitFertility.csv](https://whitlockschluter3e.zoology.ubc.ca/Data/chapter17/chap17e3BlueTitFertility.csv)"))
+tit.lm<-lm(capuchin~manipulation,data=bluetit)
+autoplot(tit.lm)
+```
+
+### Polynomial regression
+
+### ANNOTATION: Reads 'PlanktonProductivity.csv' from URL
+### ANNOTATION: Plots scatterplot of productivity vs biomass
+### ANNOTATION: Fits linear model (lm) - straight line
+### ANNOTATION: Fits quadratic model (poly(biomass, 2)) - curve
+### ANNOTATION: Compares models using ANOVA (F-test for improvement in fit)
+```r
+plankton<-read.csv(url("[https://whitlockschluter3e.zoology.ubc.ca/Data/chapter17/chap17e7PlanktonProductivity.csv](https://whitlockschluter3e.zoology.ubc.ca/Data/chapter17/chap17e7PlanktonProductivity.csv)"))
+ggplot(plankton,aes(x=biomass,y=productivity))+geom_point()
+plankton.lm<-lm(productivity~biomass,data=plankton)
+plankton.quad<-lm(productivity~poly(biomass,2),data=plankton)
+anova(plankton.lm,plankton.quad)
+```
+
+### ANNOTATION: Adds predicted values from both models to the dataframe for plotting
+### ANNOTATION: Plots data with both Linear (red) and Quadratic (blue) regression lines
+```r
+plankton$fitted.lm<-predict(plankton.lm)
+plankton$fitted.quad<-predict(plankton.quad)
+ggplot(plankton,aes(x=biomass,y=productivity))+
+  geom_point()+
+  geom_line(aes(y=fitted.lm),color="red",linewidth=2)+
+  geom_line(aes(y=fitted.quad),color="blue",linewidth=2)
+```
+
+### ANNOTATION: Plots residuals for quadratic model (check for random scatter)
+### ANNOTATION: Plots Q-Q plot of residuals (check for normality)
+```r
+#residuals
+plankton$resid.quad<-resid(plankton.quad)
+ggplot(plankton,aes(x=fitted.quad,y=resid.quad))+
+  geom_point()+geom_hline(yintercept = 0)
+ggplot(plankton,aes(sample=resid.quad))+
+  geom_qq()+geom_qq_line()
+```
+
+### Nonlinear least squares
+
+### ANNOTATION: Reads 'IslandSpecies.csv' from URL (Species-Area relationship)
+### ANNOTATION: Fits linear model to log-transformed data (log(species) ~ log(area)) - Power Law linearized
+### ANNOTATION: Fits Nonlinear Least Squares (nls) model directly to power function: Y = a * X^z
+### ANNOTATION: start=list(...) provides initial guesses for parameters 'a' and 'z'
+```r
+poolfish<-read.csv(url("[https://whitlockschluter3e.zoology.ubc.ca/Data/chapter17/chap17e9IslandSpecies.csv](https://whitlockschluter3e.zoology.ubc.ca/Data/chapter17/chap17e9IslandSpecies.csv)"))
+poolfish.lm<-lm(log(nFishSpecies)~log(poolArea),data=poolfish)
+
+poolfish.nls<-nls(nFishSpecies~a*poolArea^z, start=list(a=1,z=0.5),data=poolfish)
+summary(poolfish.nls)
+```
+
+### ANNOTATION: Compares coefficients:
+### ANNOTATION: 'z' from nls should match slope from log-log lm
+### ANNOTATION: 'a' from nls should match exp(intercept) from log-log lm
+```r
+summary(poolfish.lm)
+#Compare a
+exp(coef(poolfish.lm)[1])
+```
+
+### ANNOTATION: Adds residuals and fitted values for both models to dataframe
+```r
+poolfish$resid.lm<-resid(poolfish.lm)
+poolfish$fitted.lm<-predict(poolfish.lm)
+poolfish$resid.nls<-resid(poolfish.nls)
+poolfish$fitted.nls<-predict(poolfish.nls)
+```
+
+### ANNOTATION: Plots diagnostic plots for NLS model (Residuals vs Fitted, Q-Q plot)
+### ANNOTATION: Plots data with both NLS curve and exponentiated LM curve for comparison
+```r
+#Residuals
+g1<-ggplot(poolfish,aes(x=fitted.nls,y=resid.nls))+geom_point()+geom_hline(yintercept = 0)
+g2<-ggplot(poolfish,aes(sample=resid.nls))+
+  geom_qq()+geom_qq_line()
+#compare fits
+ggplot(poolfish,aes(x=poolArea,y=nFishSpecies))+
+  geom_point(position=position_jitter())+
+  geom_line(aes(y=fitted.nls,color="nls"))+
+  geom_line(aes(y=exp(fitted.lm),color="log-lm"))+
+  labs(color="Model",x="Pool area", y="Number of species")
+```
+
+### Example that can be directly log-transformed
+
+### ANNOTATION: Reads 'lw.csv' (Length-Weight data)
+### ANNOTATION: Fits log-log linear model: log(W) ~ log(L)
+### ANNOTATION: Fits nonlinear power model: W = a * L^b
+```r
+lw<-read.csv("lw.csv")
+
+lw.lm<-lm(log(Weight)~log(Length),data=lw)
+lw.nls<-nls(Weight~a*Length^b, start=list(a=1,b=3),data=lw)
+
+summary(lw.nls)
+summary(lw.lm)
+exp(coef(lw.lm)[1])
+```
+
+### ANNOTATION: Calculates and plots residuals and fitted values for both models
+### ANNOTATION: g1: NLS Residuals vs Fitted
+### ANNOTATION: g2: NLS Q-Q plot
+### ANNOTATION: g3: LM Residuals vs Fitted
+### ANNOTATION: g4: LM Q-Q plot
+### ANNOTATION: grid.arrange() displays all 4 plots together
+```r
+lw$resid.lm<-resid(lw.lm)
+lw$fitted.lm<-predict(lw.lm)
+lw$resid.nls<-resid(lw.nls)
+lw$fitted.nls<-predict(lw.nls)
+g1<-ggplot(lw,aes(x=fitted.lm,y=resid.lm))+geom_point()+geom_hline(yintercept = 0)
+g2<-ggplot(lw,aes(sample=resid.lm))+geom_qq()+geom_qq_line()
+g3<-ggplot(lw,aes(x=fitted.nls,y=resid.nls))+geom_point()+geom_hline(yintercept = 0)
+g4<-ggplot(lw,aes(sample=resid.nls))+geom_qq()+geom_qq_line()
+
+grid.arrange(g1,g2,g3,g4)
+```
